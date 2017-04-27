@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fzy.cms.backend.mode1.Article">
+	<insert id="add" parameterType="Article" keyProperty="id" useGeneratedKeys="true">
+		insert into t_article 
+		(title,source,content,author,keyword,intro,type,recommend,headline,topicId,createTime,updateTime,adminId) 
+		values 
+		(#{title},#{source},#{content},#{author},#{keyword},#{intro},#{type},#{recommend},#{headline},#{topicId},#{createTime},#{updateTime},#{adminId})
+	</insert>	
+	<insert id="insert_channel_article" parameterType="map">
+		insert into t_channel_article (channelId,articleId) values (#{c.id},#{a.id})
+	</insert>
+	
+	
+	<delete id="del" parameterType = "int">
+		delete from t_article where id = #{value}
+	</delete>
+	<delete id="del_channel_article" parameterType="int">
+		delete from t_channel_article where articleId = #{articleId}
+	</delete>
+	
+	
+	<resultMap type="Article" id="findById-result">
+		<result column="id" property="id"/>
+		<collection property="channels" column="id" select="findChannelByArticleId"></collection>
+	</resultMap>
+	<select id="findById" parameterType="int" resultMap="findById-result">
+		select * from t_article where id = #{value}
+	</select>
+	<select id="findChannelByArticleId" parameterType="int" resultType="Channel">
+		select * from t_channel c,t_channel_article ca where c.id = ca.channelId 
+		and ca.articleId = #{articleId}
+	</select>
+	<select id="findArticleByTitle" parameterType="map" resultType="Article">
+		select *from t_article 
+		<if test="title != null">
+		where title like #{title}
+		</if>
+		order by createTime desc
+		limit #{offset},#{pagesize}
+	</select>
+	<select id="findArticleByTitle-count" parameterType="map" resultType="int">
+		select count(*) from t_article
+		<if test="title != null">
+			where title like #{title}
+		</if>
+	</select>
+	<select id="findArticleByChannel" parameterType="map" resultType="Article">
+		<choose>
+			<when test="c != null">
+				select * from t_article a,t_channel_article ca where a.id = ca.articleId
+				and ca.channelId = #{c.id}
+				order by createTime desc
+				limit #{offset},#{pagesize}
+			</when>
+			<otherwise>
+			select * from t_article limit #{offset},#{pagesize}
+			</otherwise>
+		</choose>
+	</select>
+	<select id="findArticleByChannel-count" parameterType="map" resultType="int">
+	<choose>
+		<when test="c != null">
+			select count(*) from t_article a,t_channel_article ca where a.id = ca.articleId 
+			and ca.channelId = #{c.id}
+		</when>
+		<otherwise>
+			select count(*) from t_article 
+		</otherwise>
+	</choose>
+	</select>
+	<select id="findHeadline" parameterType="int" resultType="Article">
+		select * from t_article where headline = true order by createTime desc limit 0,#{max}
+	</select>
+	<select id="findRecommend" parameterType="int" resultType="Article">
+		select * from t_article where recommend = true order by createTime desc limit 0,#{max}
+	</select>	
+	<select id="findArticlesIdByKeyword" parameterType="map" resultType="int">
+		select distinct articleId from t_article_keyword where keyword in (${keywords})
+	</select>
+	<select id="findArticlesByIds" parameterType="map" resultType="Article">
+		select * from t_article where id in (${ids}) limit #{offset},#{pagesize}
+	</select>
+
+	<update id="update" parameterType="Article">
+		update t_article set
+		title=#{title},source=#{source},content=#{content},
+		author=#{author},keyword=#{keyword},intro=#{intro},type=#{type},
+		recommend=#{recommend},headline=#{headline},topicId=#{topicId},
+		createTime=#{createTime},updateTime=#{updateTime},deployTime=#{deployTime},
+		adminId=#{adminId}
+		where id=#{id}
+	</update>
+</mapper>
